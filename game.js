@@ -119,7 +119,7 @@ class Entity {
 			redrawBackground()
 			redrawEntity()
 			showAllRays()
-		}, 9)
+		}, 20)
 	}
 }
 
@@ -164,7 +164,9 @@ class Ray {
                 let inter = (wall.lineEqu.m * x) + wall.lineEqu.b
                 let isIntercept = ((inter - wall.a.y) * (inter - wall.b.y) <= 0)
                 if (isIntercept) {
-                    interceptList.push({ x, y: inter })
+                    // distance = root((x2 - x1) + (y2 - y1))
+                    let length = Math.sqrt(((x - this.start.x) + (inter - this.start.y))) || Math.sqrt(((this.start.x - x) + (this.start.y - inter)))
+                    interceptList.push({ x, y: inter, length })
                 }
             })
             // ensure intercept is in same direction as the ray
@@ -174,12 +176,8 @@ class Ray {
                 return ((i.y >= min && i.y <= max)) && (((this.start.y - i.y) + (i.y - this.end.y)) === (this.start.y - this.end.y))
             }) 
             if (interceptList.length > 0) {
-                let idealIntercept = interceptList.sort((a, b) => {
-                    if ((this.start.y - this.end.y) < 0) {
-                        return a.y - b.y
-                    }
-                    return b.y - a.y
-                })[0]
+                // find intercept that is the closest to the starting point
+                let idealIntercept = interceptList.sort((a, b) => a.length - b.length)[0]
                 this.end.y = idealIntercept.y
                 this.end.x = idealIntercept.x                
             }
@@ -187,5 +185,12 @@ class Ray {
         findIntersect()
 		stroke(204, 102, 0)
 		line(this.start.x, this.start.y, this.end.x, this.end.y)
-	}
+    }
+    coordinates () {
+        let max = Math.max(...[this.start.y, this.end.y])
+        let min = Math.min(...[this.start.y, this.end.y])
+        return ({
+            length: max - min
+        })
+    }
 }
