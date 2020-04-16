@@ -4,7 +4,8 @@ class Game {
 	Instance = null
 	constructor() {}
 	static setGameInstance({ height, width, colour }, { wallNum }) {
-		this.Instance = new GameInstance({ height, width, colour }, { wallNum })
+        this.Instance = new GameInstance({ height, width, colour }, { wallNum })
+        return this.Instance
 	}
 	static getInstance() {
 		if (this.Instance === null) {
@@ -64,11 +65,7 @@ class Wall {
 	constructor({ x1, y1 }, { x2, y2 }) {
 		this.a = createPoint(x1, y1)
         this.b = createPoint(x2, y2)
-        // y = mx + b
-        this.lineEqu = {
-            b: y1 - (x1 * ((y2 - y1) / (x2 - x1))),
-            m: (y2 - y1) / (x2 - x1)
-        }
+        this.lineEqu = CALC.lineEquation({ x1, y1 }, { x2, y2 })
 	}
 	show() {
 		stroke(255)
@@ -118,7 +115,7 @@ class Entity {
 
 			redrawBackground()
 			redrawEntity()
-			showAllRays()
+            showAllRays()
 		}, 20)
 	}
 }
@@ -126,9 +123,11 @@ class Entity {
 class Ray {
 	constructor(angle) {
 		this.end = createPoint()
-		this.radians = angle * (3.14159265359/180)
         this.start = createPoint()
-        this.lineEqu = { b: null, slope: null }
+        this.angle = angle
+		this.radians = CALC.degreesToRadians(angle)
+        this.lineEqu = null
+        this.length = null
 	}
 	show() {
 		let gi = Game.getInstance()
@@ -140,11 +139,7 @@ class Ray {
 			y: Math.floor(gi.Background.height * (this.start.y * Math.cos(this.radians))),
         }
         // get values for equation of ray line
-        // y = mx + b
-        this.lineEqu = {
-            b: this.start.y - (this.start.x * ((this.end.y - this.start.y) / (this.end.x - this.start.x))),
-            m: (this.end.y - this.start.y) / (this.end.x - this.start.x)
-        }
+        this.lineEqu = CALC.lineEquation({ x1: this.start.x, y1: this.start.y }, { x2: this.end.x, y2: this.end.y })
         // extend line to end of screen
         if ((this.start.y - this.end.y) < 0) {
             // y intercept = background width
@@ -158,39 +153,55 @@ class Ray {
             this.end.x = newX
         }
         const findIntersect = () => {
-            let interceptList = []
+            let intersectList = []
             gi.Walls.forEach(wall => {
                 let x = (wall.lineEqu.b - this.lineEqu.b) / (this.lineEqu.m - wall.lineEqu.m)
                 let inter = (wall.lineEqu.m * x) + wall.lineEqu.b
-                let isIntercept = ((inter - wall.a.y) * (inter - wall.b.y) <= 0)
-                if (isIntercept) {
-                    // distance = root((x2 - x1) + (y2 - y1))
-                    let length = Math.sqrt(((x - this.start.x) + (inter - this.start.y))) || Math.sqrt(((this.start.x - x) + (this.start.y - inter)))
-                    interceptList.push({ x, y: inter, length })
+                let isintersect = ((inter - wall.a.y) * (inter - wall.b.y) <= 0)
+                if (isintersect) {
+                    let length = CALC.lineLength({ x1: x, y1: inter }, { x2: this.start.x, y2: this.start.y })
+                    intersectList.push({ x, y: inter, length })
                 }
             })
-            // ensure intercept is in same direction as the ray
-            interceptList = interceptList.filter(i => {
+            // ensure intersect is in same direction as the ray
+            intersectList = intersectList.filter(i => {
                 let max = Math.max(...[this.start.y, this.end.y])
                 let min = Math.min(...[this.start.y, this.end.y])
                 return ((i.y >= min && i.y <= max)) && (((this.start.y - i.y) + (i.y - this.end.y)) === (this.start.y - this.end.y))
             }) 
-            if (interceptList.length > 0) {
-                // find intercept that is the closest to the starting point
-                let idealIntercept = interceptList.sort((a, b) => a.length - b.length)[0]
-                this.end.y = idealIntercept.y
-                this.end.x = idealIntercept.x                
+            if (intersectList.length > 0) {
+                // find intersect that is the closest to the starting point
+                let idealintersect = intersectList.sort((a, b) => a.length - b.length)[0]
+                this.end.y = idealintersect.y
+                this.end.x = idealintersect.x
+                this.length = idealintersect.length       
             }
+
+            // distance to intersect
+            this.length = this.length || CALC.lineLength({ x1: this.start.x, y1: this.start.y }, { x2: this.end.x, y2: this.end.y })
         }
         findIntersect()
 		stroke(204, 102, 0)
 		line(this.start.x, this.start.y, this.end.x, this.end.y)
     }
     coordinates () {
-        let max = Math.max(...[this.start.y, this.end.y])
-        let min = Math.min(...[this.start.y, this.end.y])
         return ({
-            length: max - min
+            length: this.rayLength,
+            angle: this.radians,
+            start: this.start,
+            end: this.end
         })
     }
+}
+
+class CALC { 
+    // distance = square root((x2 - x1) + (y2 - y1))
+    static lineLength = ({ x1, y1 }, { x2, y2 }) => Math.sqrt(((x2 - x1) + (y2 - y1))) || Math.sqrt(((x1 - x2) + (y1 - y2)))
+    // line equation y = mx + b
+    static lineEquation = ({ x1, y1 }, { x2, y2 }) => ({
+        b: y1 - (x1 * ((y2 - y1) / (x2 - x1))),
+        m: (y2 - y1) / (x2 - x1)
+    })
+    static degreesToRadians = (deg) =>  deg * (3.14159265359/180)
+    static radiansToDegrees = (rad) => rad / (3.14159265359/180)
 }
