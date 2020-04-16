@@ -1,5 +1,5 @@
-# Raytrace
-Simple 2D ray tracing
+# Raycasting
+Simple 2D ray casting
 
 ## View wiki
-https://github.com/Greenfig/Raytrace/wiki/Simple-2D-ray-tracing-using-coordinate-geometry
+https://github.com/Greenfig/Raycasting/wiki/Simple-2D-ray-casting-using-coordinate-geometry
