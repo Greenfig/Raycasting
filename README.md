@@ -2,4 +2,4 @@
 Simple 2D ray casting
 
 ## View wiki
-https://github.com/Greenfig/Raycasting/wiki/Simple-2D-ray-casting-using-coordinate-geometry
+![example](https://github.com/Greenfig/Raytrace/blob/master/example.gif)
