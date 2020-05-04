@@ -1,5 +1,5 @@
 # Raycasting
 Simple 2D ray casting
 
-## View wiki
+## Demo
 ![example](https://github.com/Greenfig/Raytrace/blob/master/example.gif)
